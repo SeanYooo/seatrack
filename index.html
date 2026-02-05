@@ -1,0 +1,2274 @@
+<!doctype html>
+<html lang="en" class="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SEATRACK | Institutional Portal v4.2</title>
+        <!-- Core Dependencies -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <style>
+            :root {
+                --accent-stem: #ec4899;
+                --accent-abm: #fbbf24;
+                --accent-humss: #3b82f6;
+                --accent-tvl: #f97316;
+                --accent-admin: #10b981;
+                --accent-teacher: #8b5cf6;
+                --bg-deep: #000000;
+                --bg-card: rgba(15, 20, 30, 0.7);
+                --border-glow: rgba(255, 255, 255, 0.08);
+                --active-accent: var(--accent-stem);
+            }
+
+            body {
+                font-family: "Inter", sans-serif;
+                background-color: var(--bg-deep);
+                color: #f3f4f6;
+                margin: 0;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            #starfield {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -1;
+                pointer-events: none;
+                opacity: 0.4;
+            }
+
+            .glass-panel {
+                background: var(--bg-card);
+                backdrop-filter: blur(20px);
+                border: 1px solid var(--border-glow);
+            }
+
+            /* Themes */
+            .theme-stem {
+                --active-accent: var(--accent-stem);
+            }
+            .theme-abm {
+                --active-accent: var(--accent-abm);
+            }
+            .theme-humss {
+                --active-accent: var(--accent-humss);
+            }
+            .theme-tvl {
+                --active-accent: var(--accent-tvl);
+            }
+            .theme-admin {
+                --active-accent: var(--accent-admin);
+            }
+            .theme-teacher {
+                --active-accent: var(--accent-teacher);
+            }
+
+            .accent-glow {
+                box-shadow: 0 0 30px -5px var(--active-accent);
+            }
+            .text-accent {
+                color: var(--active-accent);
+            }
+            .bg-accent {
+                background-color: var(--active-accent);
+            }
+            .border-accent {
+                border-color: var(--active-accent);
+            }
+            .ring-accent {
+                --tw-ring-color: var(--active-accent);
+            }
+
+            .nav-link.active {
+                color: var(--active-accent);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            .nav-link.active::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 15%;
+                height: 70%;
+                width: 4px;
+                background: var(--active-accent);
+                border-radius: 0 4px 4px 0;
+                box-shadow: 0 0 15px var(--active-accent);
+            }
+
+            .sidebar-section-label {
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.15em;
+                color: rgba(255, 255, 255, 0.25);
+                margin: 28px 0 10px 16px;
+                text-transform: uppercase;
+            }
+
+            /* Interactive Seat Grid */
+            .seat {
+                aspect-ratio: 1/1;
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                border-radius: 8px;
+                position: relative;
+            }
+            .seat-occupied {
+                background: var(--active-accent);
+                box-shadow: 0 0 15px var(--active-accent);
+                border: 1px solid rgba(255, 255, 255, 0.4);
+            }
+            .seat-vacant {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .seat-occupied::after {
+                content: "FSR-ON";
+                position: absolute;
+                top: -15px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 6px;
+                font-family: "JetBrains Mono";
+                color: var(--active-accent);
+            }
+
+            ::-webkit-scrollbar {
+                width: 5px;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--active-accent);
+            }
+
+            .role-card {
+                cursor: pointer;
+                transition: all 0.4s ease;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            .role-card:hover {
+                transform: translateY(-8px);
+                border-color: var(--active-accent);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            .role-card.selected {
+                border-color: var(--active-accent);
+                background: rgba(255, 255, 255, 0.08);
+                box-shadow: 0 0 30px -10px var(--active-accent);
+            }
+
+            .grade-input {
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                width: 60px;
+                text-align: center;
+                border-radius: 6px;
+                padding: 4px;
+                color: white;
+                transition: all 0.2s;
+            }
+            .grade-input:focus {
+                border-color: var(--active-accent);
+                outline: none;
+                background: rgba(255, 255, 255, 0.1);
+                box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+            }
+
+            .btn-interact {
+                transition: all 0.2s ease;
+                position: relative;
+                overflow: hidden;
+            }
+            .btn-interact:active {
+                transform: scale(0.95);
+            }
+
+            /* Custom Animations */
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            .animate-slide {
+                animation: slideIn 0.4s ease forwards;
+            }
+
+            /* Notification Toast */
+            #toast {
+                position: fixed;
+                bottom: 32px;
+                right: 32px;
+                z-index: 1000;
+                transform: translateY(150%);
+                transition: transform 0.3s
+                    cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            #toast.show {
+                transform: translateY(0);
+            }
+
+            .avatar-picker-item {
+                cursor: pointer;
+                transition: all 0.2s;
+                border: 2px solid transparent;
+                border-radius: 99px;
+            }
+            .avatar-picker-item:hover {
+                transform: scale(1.1);
+                border-color: var(--active-accent);
+            }
+            .avatar-picker-item.selected {
+                border-color: var(--active-accent);
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            /* Message Bubble Design */
+            .message-bubble {
+                max-width: 80%;
+                padding: 16px;
+                border-radius: 20px;
+                font-size: 13px;
+            }
+            .message-sent {
+                background: var(--active-accent);
+                color: black;
+                font-weight: 500;
+                align-self: flex-end;
+                border-bottom-right-radius: 4px;
+            }
+            .message-received {
+                background: rgba(255, 255, 255, 0.05);
+                color: #f3f4f6;
+                align-self: flex-start;
+                border-bottom-left-radius: 4px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        </style>
+    </head>
+    <body class="theme-stem">
+        <canvas id="starfield"></canvas>
+
+        <!-- Toast Notification System -->
+        <div
+            id="toast"
+            class="glass-panel px-6 py-4 rounded-2xl border-accent/30 shadow-2xl flex items-center gap-4"
+        >
+            <div id="toast-icon" class="text-accent">
+                <i data-lucide="check-circle"></i>
+            </div>
+            <div>
+                <p id="toast-title" class="font-bold text-sm">System Update</p>
+                <p id="toast-msg" class="text-xs text-gray-400">
+                    Transaction completed successfully.
+                </p>
+            </div>
+        </div>
+
+        <!-- Login Overlay -->
+        <div
+            id="login-overlay"
+            class="fixed inset-0 z-[100] bg-black flex items-center justify-center p-6"
+        >
+            <div
+                class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-16 items-center"
+            >
+                <div class="space-y-8">
+                    <div class="flex items-center gap-5">
+                        <div
+                            class="w-16 h-16 bg-white rounded-[24px] flex items-center justify-center text-black shadow-2xl rotate-3"
+                        >
+                            <i data-lucide="compass" class="w-10 h-10"></i>
+                        </div>
+                        <div>
+                            <h1
+                                class="text-6xl font-black tracking-tighter leading-none"
+                            >
+                                SEATRACK
+                            </h1>
+                            <p
+                                class="text-accent font-mono text-xs mt-1 font-bold"
+                            >
+                                V4.2 SENSOR CORE
+                            </p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <h2 class="text-3xl font-bold text-gray-200">
+                            Institutional Access
+                        </h2>
+                        <p class="text-lg text-gray-400 leading-relaxed">
+                            Secure gateway for ETTMNIHS students, faculty, and
+                            administrative personnel. Select your authorized
+                            node to proceed.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-5">
+                        <div
+                            onclick="selectRole('student')"
+                            id="card-student"
+                            class="role-card glass-panel p-6 rounded-[32px] text-center"
+                        >
+                            <i
+                                data-lucide="graduation-cap"
+                                class="w-8 h-8 mx-auto mb-3 opacity-40"
+                            ></i>
+                            <span
+                                class="text-[11px] font-black uppercase tracking-[0.2em] text-white"
+                                >Student</span
+                            >
+                        </div>
+                        <div
+                            onclick="selectRole('teacher')"
+                            id="card-teacher"
+                            class="role-card glass-panel p-6 rounded-[32px] text-center"
+                        >
+                            <i
+                                data-lucide="briefcase"
+                                class="w-8 h-8 mx-auto mb-3 opacity-40"
+                            ></i>
+                            <span
+                                class="text-[11px] font-black uppercase tracking-[0.2em] text-white"
+                                >Faculty</span
+                            >
+                        </div>
+                        <div
+                            onclick="selectRole('admin')"
+                            id="card-admin"
+                            class="role-card glass-panel p-6 rounded-[32px] text-center"
+                        >
+                            <i
+                                data-lucide="shield-check"
+                                class="w-8 h-8 mx-auto mb-3 opacity-40"
+                            ></i>
+                            <span
+                                class="text-[11px] font-black uppercase tracking-[0.2em] text-white"
+                                >Admin</span
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="glass-panel p-10 rounded-[60px] border-white/10 relative overflow-hidden"
+                >
+                    <div
+                        class="absolute -top-24 -right-24 w-64 h-64 bg-accent/10 rounded-full blur-[100px]"
+                    ></div>
+                    <div
+                        id="auth-form"
+                        class="space-y-6 opacity-20 pointer-events-none transition-all duration-700"
+                    >
+                        <div class="flex justify-between items-end mb-8">
+                            <h2 class="text-3xl font-black" id="auth-title">
+                                Verify Identity
+                            </h2>
+                            <span class="text-[10px] font-mono text-gray-500"
+                                >AUTH_LEVEL: HIGH</span
+                            >
+                        </div>
+                        <div class="space-y-4">
+                            <div class="group">
+                                <label
+                                    class="text-[10px] uppercase font-black text-gray-500 mb-2 block tracking-widest group-focus-within:text-accent transition-colors"
+                                    id="id-label"
+                                    >Institutional ID</label
+                                >
+                                <input
+                                    type="text"
+                                    id="auth-id"
+                                    placeholder="2024-XXXX-XXXX"
+                                    class="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-accent outline-none font-mono transition-all"
+                                />
+                            </div>
+                            <div id="extra-field" class="hidden animate-slide">
+                                <label
+                                    class="text-[10px] uppercase font-black text-gray-500 mb-2 block tracking-widest group-focus-within:text-accent transition-colors"
+                                    id="extra-label"
+                                    >Secure Passcode</label
+                                >
+                                <input
+                                    type="password"
+                                    id="auth-extra"
+                                    placeholder="••••••••"
+                                    class="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-accent outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+                        <button
+                            onclick="handleLogin()"
+                            class="btn-interact w-full bg-accent text-black font-black py-5 rounded-[24px] hover:opacity-90 flex items-center justify-center gap-3 accent-glow"
+                        >
+                            INITIALIZE SESSION
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                        </button>
+                        <p
+                            id="login-error"
+                            class="text-red-400 text-[10px] font-black uppercase text-center hidden tracking-widest"
+                        >
+                            ERROR: UNAUTHORIZED ACCESS ATTEMPT
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App UI -->
+        <div id="app" class="flex h-screen overflow-hidden hidden">
+            <!-- Sidebar -->
+            <aside
+                class="w-72 glass-panel flex flex-col z-30 border-r border-white/5"
+            >
+                <div class="p-8">
+                    <div class="flex items-center gap-4 mb-10">
+                        <div
+                            class="w-12 h-12 bg-accent rounded-2xl flex items-center justify-center accent-glow text-black"
+                        >
+                            <i data-lucide="compass" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h1
+                                class="font-black text-2xl tracking-tighter leading-none"
+                            >
+                                SEATRACK
+                            </h1>
+                            <div class="flex items-center gap-1.5 mt-1">
+                                <span
+                                    class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"
+                                ></span>
+                                <p
+                                    class="text-[9px] text-gray-500 font-mono uppercase tracking-tighter"
+                                    id="sidebar-role-tag"
+                                >
+                                    Node Activated
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <nav
+                        class="space-y-1 overflow-y-auto max-h-[calc(100vh-250px)] pr-2"
+                        id="main-nav"
+                    ></nav>
+                </div>
+
+                <div class="mt-auto p-6 border-t border-white/5 bg-black/20">
+                    <div
+                        onclick="switchView('profile')"
+                        class="group flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-transparent hover:border-white/10 cursor-pointer transition-all"
+                    >
+                        <div class="relative">
+                            <img
+                                src=""
+                                class="w-10 h-10 rounded-xl object-cover"
+                                id="sidebar-avatar"
+                            />
+                            <div
+                                class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-black rounded-full"
+                            ></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p
+                                class="text-sm font-bold truncate user-name-display text-white group-hover:text-accent transition-colors"
+                            >
+                                User Name
+                            </p>
+                            <p
+                                class="text-[10px] text-gray-500 font-mono uppercase"
+                                id="sidebar-id-display"
+                            >
+                                0000
+                            </p>
+                        </div>
+                        <i
+                            data-lucide="settings"
+                            class="w-4 h-4 text-gray-600 group-hover:rotate-90 transition-transform"
+                        ></i>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Workspace -->
+            <main class="flex-1 flex flex-col relative overflow-hidden">
+                <header
+                    class="h-20 glass-panel border-b border-white/5 px-10 flex items-center justify-between z-20"
+                >
+                    <div class="flex items-center gap-6">
+                        <div
+                            class="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-white/10 text-[10px] font-mono"
+                        >
+                            <span class="text-gray-500">Uptime:</span>
+                            <span id="system-clock" class="text-accent"
+                                >00:00:00</span
+                            >
+                        </div>
+                        <div
+                            id="breadcrumb"
+                            class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2"
+                        >
+                            <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                            <span>Dashboard</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-5">
+                        <div
+                            class="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10"
+                        >
+                            <label
+                                class="text-[9px] font-black text-gray-500 uppercase"
+                                >Strand</label
+                            >
+                            <select
+                                id="strand-selector"
+                                onchange="changeStrand(this.value)"
+                                class="bg-transparent border-none text-xs font-bold focus:outline-none appearance-none cursor-pointer hover:text-accent pr-4"
+                            >
+                                <option value="stem">STEM</option>
+                                <option value="abm">ABM</option>
+                                <option value="humss">HUMSS</option>
+                                <option value="tvl">TVL</option>
+                            </select>
+                        </div>
+                        <button
+                            onclick="logout()"
+                            class="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                        >
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <div id="viewport" class="flex-1 overflow-y-auto p-10">
+                    <!-- DASHBOARD: ADAPTIVE (STUDENT vs TEACHER) -->
+                    <section
+                        id="view-dashboard"
+                        class="view-content animate-slide space-y-10"
+                    >
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div
+                                class="lg:col-span-2 glass-panel p-10 rounded-[48px] relative overflow-hidden border-accent/20 flex flex-col justify-between min-h-[400px]"
+                            >
+                                <div
+                                    class="absolute top-0 right-0 p-10 opacity-10"
+                                >
+                                    <i
+                                        data-lucide="activity"
+                                        class="w-48 h-48"
+                                    ></i>
+                                </div>
+                                <div class="relative z-10">
+                                    <span
+                                        class="bg-accent/20 text-accent px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 inline-block"
+                                        id="dash-status-badge"
+                                        >Session Live</span
+                                    >
+                                    <h2
+                                        class="text-6xl font-black mb-4 tracking-tighter"
+                                        id="dash-greeting"
+                                    >
+                                        Welcome back.
+                                    </h2>
+                                    <p
+                                        class="text-gray-400 text-lg max-w-lg font-medium leading-relaxed"
+                                        id="dash-subtext"
+                                    >
+                                        Calculating performance metrics...
+                                    </p>
+                                </div>
+                                <div class="h-[180px] mt-8 relative z-10">
+                                    <canvas id="mainChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="space-y-8">
+                                <div
+                                    class="glass-panel p-8 rounded-[40px] border-white/10"
+                                    id="dash-stats-panel"
+                                ></div>
+                                <div
+                                    class="glass-panel p-8 rounded-[40px] border-white/10"
+                                >
+                                    <h3
+                                        class="text-xs font-black uppercase tracking-widest text-gray-500 mb-6 flex items-center gap-2"
+                                    >
+                                        <i
+                                            data-lucide="bell"
+                                            class="w-4 h-4"
+                                        ></i>
+                                        System Log
+                                    </h3>
+                                    <div class="space-y-4" id="mini-log"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-10 rounded-[48px]">
+                            <div
+                                class="flex justify-between items-center mb-10"
+                            >
+                                <h3
+                                    class="text-2xl font-black flex items-center gap-3"
+                                >
+                                    <i
+                                        data-lucide="list-todo"
+                                        class="w-6 h-6 text-accent"
+                                    ></i>
+                                    <span id="tasks-title">Academic Tasks</span>
+                                </h3>
+                                <button
+                                    class="text-[10px] font-black text-gray-500 hover:text-white transition-colors"
+                                >
+                                    VIEW ARCHIVE
+                                </button>
+                            </div>
+                            <div
+                                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                                id="dashboard-tasks"
+                            ></div>
+                        </div>
+                    </section>
+
+                    <!-- CLASSROOM: ADAPTIVE (STUDENT vs TEACHER) -->
+                    <section
+                        id="view-classroom"
+                        class="view-content hidden animate-slide space-y-10"
+                    >
+                        <div id="classroom-list-view" class="space-y-10">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <h2
+                                        class="text-5xl font-black mb-4 tracking-tighter"
+                                        id="curriculum-title"
+                                    >
+                                        Curriculum
+                                    </h2>
+                                    <p
+                                        class="text-gray-400 font-medium"
+                                        id="curriculum-subtext"
+                                    >
+                                        Loading course modules...
+                                    </p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button
+                                        class="p-3 bg-white/5 rounded-xl border border-white/10 text-gray-400 hover:text-white"
+                                    >
+                                        <i data-lucide="filter"></i>
+                                    </button>
+                                    <button
+                                        class="p-3 bg-white/5 rounded-xl border border-white/10 text-gray-400 hover:text-white"
+                                    >
+                                        <i data-lucide="search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div
+                                id="classroom-container"
+                                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+                            ></div>
+                        </div>
+
+                        <div
+                            id="lesson-view"
+                            class="hidden animate-slide space-y-8"
+                        >
+                            <div
+                                class="flex items-center justify-between bg-black/40 p-6 rounded-[32px] border border-white/5"
+                            >
+                                <button
+                                    onclick="closeLesson()"
+                                    class="group flex items-center gap-3 text-sm font-bold text-gray-400 hover:text-accent transition-colors"
+                                >
+                                    <div
+                                        class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-accent group-hover:text-black"
+                                    >
+                                        <i
+                                            data-lucide="arrow-left"
+                                            class="w-4 h-4"
+                                        ></i>
+                                    </div>
+                                    Back to Curriculum
+                                </button>
+                                <div
+                                    class="flex items-center gap-4"
+                                    id="lesson-progress-container"
+                                >
+                                    <div
+                                        class="h-2 w-48 bg-white/5 rounded-full overflow-hidden"
+                                    >
+                                        <div
+                                            class="h-full bg-accent"
+                                            style="width: 65%"
+                                        ></div>
+                                    </div>
+                                    <span
+                                        class="text-[10px] font-black text-accent uppercase"
+                                        >65% READ</span
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 xl:grid-cols-3 gap-10">
+                                <div class="xl:col-span-2 space-y-8">
+                                    <div
+                                        class="aspect-video bg-black rounded-[50px] border border-white/10 flex items-center justify-center relative overflow-hidden group shadow-2xl"
+                                    >
+                                        <div
+                                            class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"
+                                        ></div>
+                                        <i
+                                            data-lucide="play-circle"
+                                            class="w-24 h-24 text-accent drop-shadow-2xl cursor-pointer hover:scale-110 transition-transform"
+                                        ></i>
+                                        <div class="absolute bottom-8 left-8">
+                                            <p
+                                                class="text-[10px] font-black text-accent uppercase tracking-widest mb-1"
+                                            >
+                                                Module Video
+                                            </p>
+                                            <p
+                                                class="text-xl font-bold"
+                                                id="lesson-video-title"
+                                            >
+                                                The Foundation of Logic
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="p-4">
+                                        <h3
+                                            id="lesson-title"
+                                            class="text-5xl font-black mb-6 tracking-tighter"
+                                        >
+                                            Module Content
+                                        </h3>
+                                        <div
+                                            id="lesson-desc"
+                                            class="text-gray-400 leading-loose text-lg space-y-4"
+                                        ></div>
+                                    </div>
+                                </div>
+                                <div
+                                    id="lesson-resources-panel"
+                                    class="space-y-8"
+                                ></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ATTENDANCE: FSR ARDUINO LOGIC -->
+                    <section
+                        id="view-attendance"
+                        class="view-content hidden animate-slide space-y-10"
+                    >
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h2
+                                    class="text-5xl font-black mb-2 tracking-tighter"
+                                >
+                                    Physical Presence
+                                </h2>
+                                <p class="text-gray-400 font-medium">
+                                    Monitoring Force Sensitive Resistor (FSR)
+                                    Arduino Array.
+                                </p>
+                            </div>
+                            <div
+                                class="flex bg-white/5 p-2 rounded-[24px] border border-white/10"
+                            >
+                                <button
+                                    onclick="toggleAttendanceView('map')"
+                                    id="btn-att-map"
+                                    class="px-8 py-3 text-xs font-black rounded-2xl bg-accent text-black accent-glow transition-all"
+                                >
+                                    VISUAL MAP
+                                </button>
+                                <button
+                                    onclick="toggleAttendanceView('log')"
+                                    id="btn-att-log"
+                                    class="px-8 py-3 text-xs font-black rounded-2xl text-gray-500 hover:text-white transition-all"
+                                >
+                                    LEDGER VIEW
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="attendance-map-container" class="space-y-10">
+                            <div
+                                class="grid grid-cols-1 lg:grid-cols-4 gap-10 items-start"
+                            >
+                                <div
+                                    class="lg:col-span-3 glass-panel p-16 rounded-[60px] relative border-accent/10"
+                                >
+                                    <div
+                                        class="absolute top-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 px-4 py-1.5 rounded-full border border-white/10"
+                                    >
+                                        <span
+                                            class="w-2 h-2 bg-green-500 rounded-full animate-pulse"
+                                        ></span>
+                                        <span
+                                            class="text-[9px] font-mono font-bold"
+                                            >ARDUINO_COM3: ACTIVE</span
+                                        >
+                                    </div>
+                                    <div
+                                        class="w-full h-12 bg-white/5 border border-white/10 rounded-xl mb-20 flex items-center justify-center"
+                                    >
+                                        <span
+                                            class="text-[10px] font-black text-gray-500 uppercase tracking-[1em]"
+                                            >FRONT / BOARD</span
+                                        >
+                                    </div>
+                                    <div
+                                        id="attendance-map"
+                                        class="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-10 gap-4"
+                                    ></div>
+                                </div>
+                                <div
+                                    class="glass-panel p-8 rounded-[40px] border-white/10 space-y-6"
+                                >
+                                    <h4
+                                        class="text-xs font-black text-gray-500 uppercase tracking-widest"
+                                    >
+                                        Sensor Diagnostic
+                                    </h4>
+                                    <div class="space-y-8">
+                                        <div class="text-center">
+                                            <p
+                                                class="text-6xl font-black text-accent"
+                                                id="present-count"
+                                            >
+                                                0
+                                            </p>
+                                            <p
+                                                class="text-[10px] font-black text-gray-500 uppercase mt-2"
+                                            >
+                                                Active FSR Loads
+                                            </p>
+                                        </div>
+                                        <div class="space-y-4">
+                                            <div
+                                                class="flex justify-between text-xs font-bold"
+                                            >
+                                                <span>Reliability</span
+                                                ><span class="text-green-500"
+                                                    >99.8%</span
+                                                >
+                                            </div>
+                                            <div
+                                                class="h-2 w-full bg-white/5 rounded-full overflow-hidden"
+                                            >
+                                                <div
+                                                    class="h-full bg-accent transition-all duration-500"
+                                                    style="width: 100%"
+                                                ></div>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="p-4 bg-black/40 rounded-2xl border border-white/5"
+                                        >
+                                            <p
+                                                class="text-[8px] font-mono text-gray-500 mb-2"
+                                            >
+                                                RAW_DATA_STREAM
+                                            </p>
+                                            <div
+                                                class="h-20 overflow-hidden text-[9px] font-mono text-accent/60"
+                                                id="sensor-stream"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            id="attendance-log-container"
+                            class="hidden animate-slide grid grid-cols-1 lg:grid-cols-4 gap-10"
+                        >
+                            <div
+                                class="glass-panel p-8 rounded-[40px] lg:col-span-1 border-white/10"
+                            >
+                                <h4
+                                    class="text-xs font-black text-gray-500 uppercase tracking-widest mb-6"
+                                >
+                                    Feb 2026
+                                </h4>
+                                <div
+                                    id="attendance-calendar"
+                                    class="grid grid-cols-7 gap-2"
+                                ></div>
+                            </div>
+                            <div
+                                class="glass-panel rounded-[40px] lg:col-span-3 overflow-hidden border-white/10"
+                            >
+                                <table class="w-full text-left text-sm">
+                                    <thead
+                                        class="bg-white/5 border-b border-white/10"
+                                    >
+                                        <tr
+                                            class="text-[10px] font-black uppercase text-gray-500 tracking-widest"
+                                        >
+                                            <th class="p-8">Node Identifier</th>
+                                            <th>Auth Time</th>
+                                            <th>Coordinates</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        id="attendance-log-rows"
+                                        class="divide-y divide-white/5"
+                                    ></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Profile and Customization -->
+                    <section
+                        id="view-profile"
+                        class="view-content hidden animate-slide space-y-10"
+                    >
+                        <div
+                            class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-10 items-start"
+                        >
+                            <div
+                                class="md:col-span-2 glass-panel p-10 rounded-[50px] text-center space-y-6 relative overflow-hidden border-accent/20"
+                            >
+                                <div
+                                    class="absolute -top-10 -left-10 w-32 h-32 bg-accent/20 rounded-full blur-3xl"
+                                ></div>
+                                <div
+                                    class="relative group cursor-pointer"
+                                    onclick="toggleAvatarPicker()"
+                                >
+                                    <img
+                                        src=""
+                                        id="profile-img-large"
+                                        class="w-48 h-48 rounded-[40px] mx-auto object-cover shadow-2xl border-4 border-white/10 group-hover:scale-105 transition-transform"
+                                    />
+                                    <div
+                                        class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-[40px] transition-opacity"
+                                    >
+                                        <i
+                                            data-lucide="camera"
+                                            class="w-10 h-10 text-white"
+                                        ></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2
+                                        class="text-3xl font-black user-name-display"
+                                    >
+                                        User Name
+                                    </h2>
+                                    <p
+                                        class="text-accent font-mono text-sm uppercase font-bold tracking-widest mt-1"
+                                        id="profile-role-display"
+                                    >
+                                        Role
+                                    </p>
+                                </div>
+                                <div
+                                    class="pt-6 border-t border-white/10 space-y-2"
+                                >
+                                    <p
+                                        class="text-[10px] font-black text-gray-500 uppercase tracking-widest"
+                                    >
+                                        Institutional Signature
+                                    </p>
+                                    <p
+                                        id="profile-bio"
+                                        class="text-gray-400 italic text-sm"
+                                    >
+                                        "The future of education is
+                                        decentralized and digital."
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="md:col-span-3 space-y-8">
+                                <div
+                                    class="glass-panel p-10 rounded-[50px] border-white/10"
+                                >
+                                    <h3
+                                        class="text-xl font-black mb-8 flex items-center gap-3"
+                                    >
+                                        <i
+                                            data-lucide="sliders"
+                                            class="w-5 h-5 text-accent"
+                                        ></i>
+                                        Node Preferences
+                                    </h3>
+                                    <div class="space-y-6">
+                                        <div class="space-y-2">
+                                            <label
+                                                class="text-[10px] font-black text-gray-500 uppercase tracking-widest"
+                                                >Display Name</label
+                                            >
+                                            <input
+                                                type="text"
+                                                id="edit-name"
+                                                class="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-accent outline-none font-bold"
+                                            />
+                                        </div>
+                                        <div class="space-y-2">
+                                            <label
+                                                class="text-[10px] font-black text-gray-500 uppercase tracking-widest"
+                                                >Public Bio</label
+                                            >
+                                            <textarea
+                                                id="edit-bio"
+                                                rows="3"
+                                                class="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-accent outline-none text-gray-400"
+                                            ></textarea>
+                                        </div>
+                                        <button
+                                            onclick="saveProfile()"
+                                            class="btn-interact w-full bg-white text-black font-black py-5 rounded-[24px] hover:bg-accent transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            COMMIT CHANGES
+                                            <i
+                                                data-lucide="save"
+                                                class="w-4 h-4"
+                                            ></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Avatar Picker Modal-style -->
+                                <div
+                                    id="avatar-picker"
+                                    class="hidden glass-panel p-8 rounded-[40px] border-accent/40 animate-slide"
+                                >
+                                    <h4
+                                        class="text-xs font-black uppercase tracking-widest text-gray-500 mb-6"
+                                    >
+                                        Select Personal Identifier
+                                    </h4>
+                                    <div
+                                        class="grid grid-cols-4 sm:grid-cols-6 gap-4"
+                                        id="avatar-grid"
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section
+                        id="view-teacher-records"
+                        class="view-content hidden animate-slide space-y-10"
+                    >
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-5xl font-black tracking-tighter">
+                                Grade Ledger
+                            </h2>
+                            <button
+                                onclick="finalizeGrades()"
+                                class="btn-interact bg-accent text-black px-10 py-4 rounded-2xl text-xs font-black accent-glow"
+                            >
+                                PUSH TO CLOUD
+                            </button>
+                        </div>
+                        <div
+                            class="glass-panel rounded-[48px] overflow-hidden border-white/10 shadow-2xl"
+                        >
+                            <table class="w-full text-left text-sm">
+                                <thead
+                                    class="text-[10px] font-black uppercase text-gray-500 bg-white/5 border-b border-white/10 tracking-[0.2em]"
+                                >
+                                    <tr>
+                                        <th class="p-8">Student Identifier</th>
+                                        <th class="text-center">
+                                            Midterm (40%)
+                                        </th>
+                                        <th class="text-center">
+                                            Finals (60%)
+                                        </th>
+                                        <th class="text-center">Weighted</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-right p-8">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody
+                                    id="grading-table"
+                                    class="divide-y divide-white/5"
+                                ></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section
+                        id="view-vault"
+                        class="view-content hidden animate-slide space-y-10"
+                    >
+                        <h2 class="text-5xl font-black tracking-tighter">
+                            Asset Vault
+                        </h2>
+                        <div
+                            class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6"
+                            id="vault-grid"
+                        ></div>
+                    </section>
+
+                    <section
+                        id="view-quizzes"
+                        class="view-content hidden animate-slide space-y-10"
+                    >
+                        <h2
+                            class="text-5xl font-black tracking-tighter"
+                            id="quizzes-header"
+                        >
+                            Performance History
+                        </h2>
+                        <div
+                            class="grid grid-cols-1 gap-6"
+                            id="quiz-list"
+                        ></div>
+                    </section>
+
+                    <section
+                        id="view-directory"
+                        class="view-content hidden animate-slide space-y-10"
+                    >
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-5xl font-black tracking-tighter">
+                                Active Nodes
+                            </h2>
+                            <input
+                                type="text"
+                                placeholder="Search by name or strand..."
+                                class="bg-white/5 border border-white/10 rounded-full px-8 py-3 text-xs w-64 focus:border-accent outline-none"
+                            />
+                        </div>
+                        <div
+                            id="student-list"
+                            class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"
+                        ></div>
+                    </section>
+
+                    <section
+                        id="view-comms"
+                        class="view-content hidden h-[calc(100vh-220px)] flex flex-col space-y-6"
+                    >
+                        <h2 class="text-5xl font-black tracking-tighter">
+                            Encrypted Comms
+                        </h2>
+                        <div
+                            class="flex-1 glass-panel rounded-[50px] flex flex-col overflow-hidden border-white/10"
+                        >
+                            <div
+                                id="chat-messages"
+                                class="flex-1 overflow-y-auto p-10 flex flex-col space-y-6"
+                            ></div>
+                            <div
+                                class="p-8 bg-black/40 border-t border-white/10 flex gap-4"
+                            >
+                                <input
+                                    type="text"
+                                    id="chat-input"
+                                    placeholder="Enter secure transmission payload..."
+                                    class="flex-1 bg-white/5 border border-white/10 rounded-[24px] px-8 py-5 text-sm outline-none focus:border-accent transition-colors"
+                                />
+                                <button
+                                    onclick="sendMsg()"
+                                    class="btn-interact bg-accent text-black px-10 rounded-[24px] accent-glow"
+                                >
+                                    <i data-lucide="send"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+
+        <script>
+            // Core State Management
+            let currentUser = null;
+            let selectedRole = null;
+            let mainChart = null;
+            let activeStrand = "stem";
+            let attendanceData = Array(40).fill(false);
+            let sensorInterval = null;
+
+            const avatarPool = [
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka&backgroundColor=ffdfbf",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Midnight&backgroundColor=c0aede",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver&backgroundColor=d1d4f9",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Sasha&backgroundColor=ffd5dc",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Bailey&backgroundColor=b6e3f4",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Cookie&backgroundColor=ffdfbf",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Pepper&backgroundColor=c0aede",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Ginger&backgroundColor=d1d4f9",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Luna&backgroundColor=ffd5dc",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Milo&backgroundColor=b6e3f4",
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=Coco&backgroundColor=ffdfbf",
+            ];
+
+            let students = [
+                {
+                    id: "2024-001",
+                    n: "Alex Rivera",
+                    s: "STEM",
+                    m: 95,
+                    f: 98,
+                    bio: "Aspiring Rocket Scientist",
+                    img: avatarPool[0],
+                },
+                {
+                    id: "2024-002",
+                    n: "Chloe Lim",
+                    s: "ABM",
+                    m: 88,
+                    f: 91,
+                    bio: "Future Entrepreneur",
+                    img: avatarPool[1],
+                },
+                {
+                    id: "2024-003",
+                    n: "David Park",
+                    s: "HUMSS",
+                    m: 92,
+                    f: 89,
+                    bio: "Voice for the People",
+                    img: avatarPool[2],
+                },
+                {
+                    id: "2024-004",
+                    n: "Elena Cruz",
+                    s: "TVL",
+                    m: 94,
+                    f: 95,
+                    bio: "Creative Tech Wizard",
+                    img: avatarPool[3],
+                },
+                {
+                    id: "2024-005",
+                    n: "Miguel Tan",
+                    s: "STEM",
+                    m: 82,
+                    f: 85,
+                    bio: "Math Enthusiast",
+                    img: avatarPool[4],
+                },
+                {
+                    id: "2024-006",
+                    n: "Sofia Gomez",
+                    s: "ABM",
+                    m: 91,
+                    f: 93,
+                    bio: "Finance Specialist",
+                    img: avatarPool[5],
+                },
+                {
+                    id: "2024-007",
+                    n: "Rico Blanco",
+                    s: "STEM",
+                    m: 78,
+                    f: 82,
+                    bio: "Biology Explorer",
+                    img: avatarPool[6],
+                },
+                {
+                    id: "2024-008",
+                    n: "Hanna Oh",
+                    s: "HUMSS",
+                    m: 96,
+                    f: 98,
+                    bio: "Legal Advocate",
+                    img: avatarPool[7],
+                },
+                {
+                    id: "2024-009",
+                    n: "Zack Snyder",
+                    s: "TVL",
+                    m: 85,
+                    f: 80,
+                    bio: "Cinematographer",
+                    img: avatarPool[8],
+                },
+                {
+                    id: "2024-010",
+                    n: "Liza Soberano",
+                    s: "STEM",
+                    m: 90,
+                    f: 92,
+                    bio: "AI Researcher",
+                    img: avatarPool[9],
+                },
+            ];
+
+            const modules = [
+                {
+                    id: 1,
+                    title: "Advanced Calculus II",
+                    strand: "STEM",
+                    desc: "Integrals, derivatives, and complex plane transformations.",
+                    tasks: 4,
+                    prog: 75,
+                    completedBy: 18,
+                },
+                {
+                    id: 2,
+                    title: "Quantum Physics Essentials",
+                    strand: "STEM",
+                    desc: "Exploration of subatomic particles and wave duality.",
+                    tasks: 3,
+                    prog: 40,
+                    completedBy: 12,
+                },
+                {
+                    id: 3,
+                    title: "Business Ethics & Law",
+                    strand: "ABM",
+                    desc: "Navigating the moral landscape of corporate governance.",
+                    tasks: 2,
+                    prog: 100,
+                    completedBy: 24,
+                },
+                {
+                    id: 4,
+                    title: "Sociology in Digital Age",
+                    strand: "HUMSS",
+                    desc: "How social media reshapes human interaction.",
+                    tasks: 5,
+                    prog: 10,
+                    completedBy: 5,
+                },
+                {
+                    id: 5,
+                    title: "Information Security",
+                    strand: "TVL",
+                    desc: "Firewalls, encryption, and penetration testing basics.",
+                    tasks: 6,
+                    prog: 25,
+                    completedBy: 9,
+                },
+                {
+                    id: 6,
+                    title: "Economic Modeling",
+                    strand: "ABM",
+                    desc: "Predicting market behaviors using regression analysis.",
+                    tasks: 4,
+                    prog: 50,
+                    completedBy: 15,
+                },
+                {
+                    id: 7,
+                    title: "Organic Chemistry",
+                    strand: "STEM",
+                    desc: "Carbon-based structures and reaction mechanisms.",
+                    tasks: 3,
+                    prog: 85,
+                    completedBy: 21,
+                },
+            ];
+
+            const studentTasks = [
+                {
+                    id: 1,
+                    title: "Submit Module 4 Lab Report",
+                    due: "Today",
+                    status: "urgent",
+                    icon: "flask-conical",
+                },
+                {
+                    id: 2,
+                    title: "Peer Review: Macroeconomics",
+                    due: "Tomorrow",
+                    status: "pending",
+                    icon: "users",
+                },
+                {
+                    id: 3,
+                    title: "Calculus Quiz Preparation",
+                    due: "Feb 10",
+                    status: "pending",
+                    icon: "brain",
+                },
+            ];
+
+            const teacherTasks = [
+                {
+                    id: 1,
+                    title: "Grade Calculus Lab Reports",
+                    due: "Today",
+                    status: "urgent",
+                    icon: "edit-3",
+                },
+                {
+                    id: 2,
+                    title: "Update Attendance Thresholds",
+                    due: "Feb 05",
+                    status: "pending",
+                    icon: "settings",
+                },
+                {
+                    id: 3,
+                    title: "Institutional Meeting",
+                    due: "Feb 10",
+                    status: "upcoming",
+                    icon: "calendar",
+                },
+            ];
+
+            const dummyCreds = {
+                student: {
+                    id: "2024-STEM",
+                    extra: "1234",
+                    name: "Juan Dela Cruz",
+                    strand: "STEM",
+                    bio: "Learning one commit at a time.",
+                    img: avatarPool[0],
+                },
+                teacher: {
+                    id: "TEACH-2024",
+                    extra: "MASTER",
+                    name: "Dr. Elena Santos",
+                    dept: "Faculty",
+                    bio: "Developing future leaders in science.",
+                    img: avatarPool[4],
+                },
+                admin: {
+                    id: "ADMIN-ROOT",
+                    extra: "OVERRIDE",
+                    name: "System Admin",
+                    role: "Super Admin",
+                    bio: "Root access granted.",
+                    img: avatarPool[2],
+                },
+            };
+
+            const sidebarConfigs = {
+                student: [
+                    {
+                        section: "Academic",
+                        items: [
+                            {
+                                id: "dashboard",
+                                icon: "layout-grid",
+                                label: "Dashboard",
+                            },
+                            {
+                                id: "classroom",
+                                icon: "book-open",
+                                label: "Curriculum",
+                            },
+                            {
+                                id: "quizzes",
+                                icon: "award",
+                                label: "Assessments",
+                            },
+                        ],
+                    },
+                    {
+                        section: "Internal",
+                        items: [
+                            { id: "vault", icon: "lock", label: "Vault" },
+                            {
+                                id: "attendance",
+                                icon: "clock",
+                                label: "Presence",
+                            },
+                        ],
+                    },
+                    {
+                        section: "Network",
+                        items: [
+                            { id: "directory", icon: "users", label: "Nodes" },
+                            {
+                                id: "comms",
+                                icon: "message-square",
+                                label: "Terminal",
+                            },
+                        ],
+                    },
+                ],
+                teacher: [
+                    {
+                        section: "Control",
+                        items: [
+                            {
+                                id: "dashboard",
+                                icon: "activity",
+                                label: "Overview",
+                            },
+                            {
+                                id: "teacher-records",
+                                icon: "edit-3",
+                                label: "Grading",
+                            },
+                        ],
+                    },
+                    {
+                        section: "System",
+                        items: [
+                            {
+                                id: "classroom",
+                                icon: "book-open",
+                                label: "Curriculum Designer",
+                            },
+                            {
+                                id: "attendance",
+                                icon: "cpu",
+                                label: "FSR Sensors",
+                            },
+                        ],
+                    },
+                    {
+                        section: "Network",
+                        items: [
+                            {
+                                id: "directory",
+                                icon: "users",
+                                label: "Students",
+                            },
+                            {
+                                id: "comms",
+                                icon: "message-square",
+                                label: "Comms",
+                            },
+                        ],
+                    },
+                ],
+            };
+
+            // --- AUTH & INIT ---
+
+            function selectRole(role) {
+                selectedRole = role;
+                document
+                    .querySelectorAll(".role-card")
+                    .forEach((c) => c.classList.remove("selected"));
+                document
+                    .getElementById("card-" + role)
+                    .classList.add("selected");
+                document.body.className =
+                    "theme-" + (role === "student" ? "stem" : role);
+                document
+                    .getElementById("auth-form")
+                    .classList.remove("opacity-20", "pointer-events-none");
+                document
+                    .getElementById("extra-field")
+                    .classList.remove("hidden");
+                document.getElementById("auth-title").innerText = {
+                    student: "Student Portal",
+                    teacher: "Faculty Terminal",
+                    admin: "Root Control",
+                }[role];
+                lucide.createIcons();
+            }
+
+            function handleLogin() {
+                const id = document.getElementById("auth-id").value;
+                const extra = document.getElementById("auth-extra").value;
+                if (
+                    dummyCreds[selectedRole] &&
+                    id === dummyCreds[selectedRole].id &&
+                    extra === dummyCreds[selectedRole].extra
+                ) {
+                    currentUser = {
+                        ...dummyCreds[selectedRole],
+                        role: selectedRole,
+                    };
+                    initApp();
+                    showToast(
+                        "Authentication Successful",
+                        "Secure session established.",
+                    );
+                } else {
+                    const err = document.getElementById("login-error");
+                    err.classList.remove("hidden");
+                    setTimeout(() => err.classList.add("hidden"), 3000);
+                }
+            }
+
+            function initApp() {
+                document
+                    .getElementById("login-overlay")
+                    .classList.add("hidden");
+                document.getElementById("app").classList.remove("hidden");
+                updateUIStrings();
+                renderSidebar();
+                switchView("dashboard");
+                startClock();
+                initAvatarPicker();
+                startSensorSimulation();
+            }
+
+            function updateUIStrings() {
+                document
+                    .querySelectorAll(".user-name-display")
+                    .forEach((e) => (e.innerText = currentUser.name));
+                document.getElementById("sidebar-id-display").innerText =
+                    `NODE: ${currentUser.id}`;
+                document.getElementById("sidebar-role-tag").innerText = (
+                    currentUser.role === "teacher"
+                        ? "FACULTY"
+                        : currentUser.role
+                ).toUpperCase();
+                document.getElementById("profile-img-large").src =
+                    currentUser.img;
+                document.getElementById("sidebar-avatar").src = currentUser.img;
+                document.getElementById("profile-role-display").innerText =
+                    currentUser.role.toUpperCase();
+                document.getElementById("profile-bio").innerText =
+                    `"${currentUser.bio}"`;
+                document.getElementById("edit-name").value = currentUser.name;
+                document.getElementById("edit-bio").value = currentUser.bio;
+            }
+
+            function startClock() {
+                setInterval(() => {
+                    const now = new Date();
+                    document.getElementById("system-clock").innerText = now
+                        .toTimeString()
+                        .split(" ")[0];
+                }, 1000);
+            }
+
+            // --- SENSOR LOGIC (AUTOMATIC FSR) ---
+
+            function startSensorSimulation() {
+                if (sensorInterval) clearInterval(sensorInterval);
+                const stream = document.getElementById("sensor-stream");
+
+                sensorInterval = setInterval(() => {
+                    // Randomly toggle seats to simulate people sitting/standing
+                    if (Math.random() > 0.8) {
+                        const idx = Math.floor(Math.random() * 40);
+                        attendanceData[idx] = !attendanceData[idx];
+
+                        const time = new Date().toLocaleTimeString();
+                        const line = document.createElement("div");
+                        line.innerText = `[${time}] FSR_${idx} LOAD: ${attendanceData[idx] ? "42.5kg" : "0.0kg"}`;
+                        stream.prepend(line);
+                        if (stream.children.length > 8)
+                            stream.lastChild.remove();
+
+                        if (
+                            document
+                                .getElementById("view-attendance")
+                                .classList.contains("hidden") === false
+                        ) {
+                            renderAttendance();
+                        }
+                    }
+                }, 2000);
+            }
+
+            // --- NAVIGATION ---
+
+            function renderSidebar() {
+                const nav = document.getElementById("main-nav");
+                nav.innerHTML = "";
+                const roleKey =
+                    currentUser.role === "admin" ? "teacher" : currentUser.role;
+                sidebarConfigs[roleKey].forEach((cat) => {
+                    nav.innerHTML += `<div class="sidebar-section-label">${cat.section}</div>`;
+                    cat.items.forEach((item) => {
+                        nav.innerHTML += `
+                        <button onclick="switchView('${item.id}')" class="nav-link w-full flex items-center gap-4 px-5 py-3.5 text-sm font-bold rounded-2xl relative transition-all">
+                            <i data-lucide="${item.icon}" class="w-4 h-4"></i> ${item.label}
+                        </button>`;
+                    });
+                });
+                lucide.createIcons();
+            }
+
+            function switchView(id) {
+                document
+                    .querySelectorAll(".view-content")
+                    .forEach((v) => v.classList.add("hidden"));
+                document
+                    .getElementById("view-" + id)
+                    .classList.remove("hidden");
+                document
+                    .getElementById("breadcrumb")
+                    .querySelector("span").innerText = id.toUpperCase();
+
+                document.querySelectorAll(".nav-link").forEach((l) => {
+                    const onclick = l.getAttribute("onclick");
+                    l.classList.toggle(
+                        "active",
+                        onclick && onclick.includes(`'${id}'`),
+                    );
+                });
+
+                if (id === "dashboard") initDashboard();
+                if (id === "classroom") renderModules();
+                if (id === "attendance") renderAttendance();
+                if (id === "teacher-records") renderGrading();
+                if (id === "vault") renderVault();
+                if (id === "quizzes") renderQuizzes();
+                if (id === "directory") renderDirectory();
+
+                lucide.createIcons();
+            }
+
+            // --- DASHBOARD: ADAPTIVE ---
+
+            function initDashboard() {
+                const isT = currentUser.role === "teacher";
+
+                // GREETING & SUBTEXT
+                document.getElementById("dash-greeting").innerText = isT
+                    ? "Faculty Overview."
+                    : "Welcome back.";
+                document.getElementById("dash-status-badge").innerText = isT
+                    ? "Instructor Mode"
+                    : "Session Live";
+                document.getElementById("dash-subtext").innerText = isT
+                    ? "You have 12 pending lab reports to grade across 3 strands. Classroom attendance is currently at 88%."
+                    : "You have 3 assignments due within 48 hours. Your current GPA performance is trending upwards by 4.2%.";
+
+                // TASKS
+                const tasksToRender = isT ? teacherTasks : studentTasks;
+                document.getElementById("tasks-title").innerText = isT
+                    ? "Faculty To-Do"
+                    : "Academic Tasks";
+                const taskCont = document.getElementById("dashboard-tasks");
+                taskCont.innerHTML = tasksToRender
+                    .map(
+                        (t) => `
+                <div class="group glass-panel p-6 rounded-[32px] border-white/5 hover:border-accent/40 transition-all cursor-pointer">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-black transition-all">
+                            <i data-lucide="${t.icon}"></i>
+                        </div>
+                        <div class="text-[10px] font-black uppercase tracking-widest text-gray-500">${t.due}</div>
+                    </div>
+                    <h4 class="font-bold text-white mb-1">${t.title}</h4>
+                    <p class="text-[10px] ${t.status === "urgent" ? "text-red-400" : "text-accent"} font-black uppercase">${t.status}</p>
+                </div>
+            `,
+                    )
+                    .join("");
+
+                // LOG
+                const logItems = isT
+                    ? [
+                          {
+                              t: "FSR_Array Update",
+                              m: "New sensor calibrated",
+                              c: "accent",
+                          },
+                          {
+                              t: "Course Publish",
+                              m: "Ethics Module live",
+                              c: "green-500",
+                          },
+                      ]
+                    : [
+                          {
+                              t: "Quiz Graded",
+                              m: "Calculus II: 95%",
+                              c: "accent",
+                          },
+                          {
+                              t: "New Content",
+                              m: "Module 04 ready",
+                              c: "blue-500",
+                          },
+                      ];
+
+                document.getElementById("mini-log").innerHTML = logItems
+                    .map(
+                        (l) => `
+                <div class="flex gap-4">
+                    <div class="w-1 h-8 bg-${l.c}/30 rounded-full"></div>
+                    <div>
+                        <p class="text-xs font-bold text-white">${l.t}</p>
+                        <p class="text-[10px] text-gray-500 font-mono">${l.m}</p>
+                    </div>
+                </div>`,
+                    )
+                    .join("");
+
+                // STATS
+                const statsCont = document.getElementById("dash-stats-panel");
+                const stats = isT
+                    ? [
+                          { l: "Engagement", v: 91, c: "accent" },
+                          { l: "Avg Grade", v: 84, c: "blue-500" },
+                          { l: "Attendance", v: 88, c: "green-500" },
+                      ]
+                    : [
+                          { l: "Attendance", v: 94, c: "accent" },
+                          { l: "GPA", v: 88, c: "blue-500" },
+                          { l: "Participation", v: 100, c: "green-500" },
+                      ];
+
+                statsCont.innerHTML =
+                    `<h4 class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-6">Metrics</h4>` +
+                    stats
+                        .map(
+                            (s) => `
+                    <div class="mb-6">
+                        <div class="flex justify-between text-[10px] font-black uppercase mb-2"><span>${s.l}</span><span class="text-${s.c}">${s.v}%</span></div>
+                        <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div class="h-full bg-${s.c}" style="width: ${s.v}%"></div></div>
+                    </div>`,
+                        )
+                        .join("");
+
+                // CHART
+                if (mainChart) mainChart.destroy();
+                const ctx = document
+                    .getElementById("mainChart")
+                    .getContext("2d");
+                mainChart = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: [
+                            "Mon",
+                            "Tue",
+                            "Wed",
+                            "Thu",
+                            "Fri",
+                            "Sat",
+                            "Sun",
+                        ],
+                        datasets: [
+                            {
+                                label: isT
+                                    ? "Class Engagement"
+                                    : "Study Activity",
+                                data: isT
+                                    ? [80, 85, 82, 88, 91, 75, 88]
+                                    : [45, 78, 52, 91, 65, 30, 85],
+                                borderColor: getComputedStyle(document.body)
+                                    .getPropertyValue("--active-accent")
+                                    .trim(),
+                                backgroundColor: "rgba(236, 72, 153, 0.1)",
+                                fill: true,
+                                tension: 0.5,
+                                borderWidth: 4,
+                                pointRadius: 4,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { display: false },
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: "#444",
+                                    font: { size: 10, weight: "bold" },
+                                },
+                            },
+                        },
+                    },
+                });
+                lucide.createIcons();
+            }
+
+            // --- CLASSROOM: ADAPTIVE ---
+
+            function renderModules() {
+                const isT = currentUser.role === "teacher";
+                document.getElementById("curriculum-title").innerText = isT
+                    ? "Curriculum Designer"
+                    : "Learning Path";
+                document.getElementById("curriculum-subtext").innerText = isT
+                    ? "Manage course modules and track student progression."
+                    : "Complete your modules to advance to the next level.";
+
+                const cont = document.getElementById("classroom-container");
+                cont.innerHTML = "";
+                modules.forEach((m) => {
+                    cont.innerHTML += `
+                    <div onclick="openLesson(${m.id})" class="glass-panel p-8 rounded-[40px] cursor-pointer hover:border-accent/40 transition-all group flex flex-col justify-between min-h-[220px]">
+                        <div>
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="w-14 h-14 bg-white/5 rounded-[22px] flex items-center justify-center group-hover:bg-accent group-hover:text-black transition-all">
+                                    <i data-lucide="${isT ? "settings" : "book-open"}"></i>
+                                </div>
+                                <span class="bg-white/5 text-gray-500 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">${m.strand}</span>
+                            </div>
+                            <h4 class="font-black text-xl mb-2 group-hover:text-accent transition-colors">${m.title}</h4>
+                            <p class="text-xs text-gray-500 line-clamp-2">${m.desc}</p>
+                        </div>
+                        <div class="mt-8 space-y-2">
+                            <div class="flex justify-between text-[10px] font-black uppercase">
+                                <span class="text-gray-500">${isT ? m.completedBy + " Completed" : m.tasks + " Tasks"}</span>
+                                <span class="text-accent">${isT ? "ACTIVE" : m.prog + "%"}</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                <div class="h-full bg-accent transition-all duration-1000" style="width: ${isT ? (m.completedBy / 30) * 100 : m.prog}%"></div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                lucide.createIcons();
+            }
+
+            function openLesson(id) {
+                const isT = currentUser.role === "teacher";
+                const m = modules.find((x) => x.id === id);
+                document
+                    .getElementById("classroom-list-view")
+                    .classList.add("hidden");
+                document
+                    .getElementById("lesson-view")
+                    .classList.remove("hidden");
+                document.getElementById("lesson-title").innerText = m.title;
+                document.getElementById("lesson-video-title").innerText = isT
+                    ? `Preview: ${m.title}`
+                    : `Overview: ${m.title}`;
+
+                document
+                    .getElementById("lesson-progress-container")
+                    .classList.toggle("hidden", isT);
+
+                const descCont = document.getElementById("lesson-desc");
+                descCont.innerHTML = `<p>${m.desc}</p><p>Module analysis data suggests this module has a 12% higher engagement rate than last semester. Resources are updated weekly.</p>`;
+
+                const resources = document.getElementById(
+                    "lesson-resources-panel",
+                );
+                resources.innerHTML = `
+                <div class="glass-panel p-8 rounded-[40px] border-accent/10">
+                    <h4 class="font-black text-xs uppercase tracking-widest text-gray-500 mb-6">${isT ? "Instructor Assets" : "Resource Library"}</h4>
+                    <div class="space-y-3">
+                        ${[
+                            "Study_Guide_V1.pdf",
+                            "Lab_Manual_S2.pdf",
+                            "Dataset_Alpha.csv",
+                        ]
+                            .map(
+                                (f) => `
+                            <div onclick="showToast('Action Initialized', '${f}')" class="p-4 bg-white/5 rounded-2xl text-xs flex items-center justify-between hover:bg-white/10 cursor-pointer border border-transparent hover:border-white/10 transition-all">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="file-text" class="w-4 h-4 text-accent"></i>
+                                    <span class="font-bold">${f}</span>
+                                </div>
+                                <i data-lucide="${isT ? "eye" : "download"}" class="w-4 h-4 text-gray-600"></i>
+                            </div>
+                        `,
+                            )
+                            .join("")}
+                    </div>
+                </div>
+                <div class="glass-panel p-8 rounded-[40px] border-white/5">
+                    <h4 class="font-black text-xs uppercase tracking-widest text-gray-500 mb-4">${isT ? "Module Management" : "Module Quiz"}</h4>
+                    <p class="text-xs text-gray-400 mb-6">${isT ? "Edit assessment parameters or view student responses." : "Take the assessment to unlock the next chapter."}</p>
+                    <button onclick="showToast('Initializing...', 'Secure Environment')" class="w-full py-4 bg-accent text-black font-black rounded-2xl text-xs accent-glow">
+                        ${isT ? "MANAGE ASSESSMENT" : "START ASSESSMENT"}
+                    </button>
+                </div>
+            `;
+                lucide.createIcons();
+            }
+
+            function closeLesson() {
+                document
+                    .getElementById("classroom-list-view")
+                    .classList.remove("hidden");
+                document.getElementById("lesson-view").classList.add("hidden");
+            }
+
+            // --- ATTENDANCE: FSR DISPLAY ---
+
+            function renderAttendance() {
+                const map = document.getElementById("attendance-map");
+                map.innerHTML = "";
+                attendanceData.forEach((occupied, i) => {
+                    map.innerHTML += `<div class="seat ${occupied ? "seat-occupied" : "seat-vacant"}"></div>`;
+                });
+                updateAttendanceStats();
+
+                const rows = document.getElementById("attendance-log-rows");
+                rows.innerHTML = students
+                    .map(
+                        (s, idx) => `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="p-8 font-bold flex items-center gap-4">
+                        <img src="${s.img}" class="w-8 h-8 rounded-lg border border-white/10">
+                        <div><p class="text-sm">${s.n}</p><p class="text-[9px] text-gray-500 font-mono">${s.id}</p></div>
+                    </td>
+                    <td class="p-8 font-mono text-[10px] text-gray-400">07:42:${(10 + idx).toString().padStart(2, "0")} AM</td>
+                    <td class="p-8 font-mono text-[10px]">ZONE-A/R${Math.ceil((idx + 1) / 10)}</td>
+                    <td class="p-8"><span class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-green-500/10 text-green-500">Authorized</span></td>
+                </tr>`,
+                    )
+                    .join("");
+
+                const cal = document.getElementById("attendance-calendar");
+                cal.innerHTML = "";
+                for (let i = 1; i <= 28; i++) {
+                    const isT = i === 4;
+                    cal.innerHTML += `<div class="calendar-day h-8 flex items-center justify-center text-[10px] font-black rounded-xl ${isT ? "bg-accent text-black shadow-lg shadow-accent/40" : "text-gray-500 hover:bg-white/5"}">${i}</div>`;
+                }
+            }
+
+            function updateAttendanceStats() {
+                const count = attendanceData.filter((x) => x).length;
+                document.getElementById("present-count").innerText = count;
+            }
+
+            function toggleAttendanceView(mode) {
+                document
+                    .getElementById("attendance-map-container")
+                    .classList.toggle("hidden", mode === "log");
+                document
+                    .getElementById("attendance-log-container")
+                    .classList.toggle("hidden", mode === "map");
+                document.getElementById("btn-att-map").className =
+                    mode === "map"
+                        ? "px-8 py-3 text-xs font-black rounded-2xl bg-accent text-black accent-glow"
+                        : "px-8 py-3 text-xs font-black rounded-2xl text-gray-500 hover:text-white";
+                document.getElementById("btn-att-log").className =
+                    mode === "log"
+                        ? "px-8 py-3 text-xs font-black rounded-2xl bg-accent text-black accent-glow"
+                        : "px-8 py-3 text-xs font-black rounded-2xl text-gray-500 hover:text-white";
+            }
+
+            // --- DIRECTORY & OTHERS ---
+
+            function renderDirectory() {
+                const cont = document.getElementById("student-list");
+                cont.innerHTML = students
+                    .map(
+                        (s) => `
+                <div class="group glass-panel p-6 rounded-[32px] hover:border-accent transition-all cursor-pointer">
+                    <div class="flex items-center gap-4 mb-6">
+                        <img src="${s.img}" class="w-16 h-16 rounded-2xl border-2 border-white/5 object-cover group-hover:scale-110 transition-transform">
+                        <div><p class="font-black text-white group-hover:text-accent transition-colors">${s.n}</p><p class="text-[9px] text-gray-500 uppercase font-black tracking-widest">${s.id}</p></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2 text-[10px] text-gray-400"><i data-lucide="book" class="w-3 h-3"></i> <span>Strand: <b>${s.s}</b></span></div>
+                        <p class="text-[10px] text-gray-500 italic leading-relaxed">"${s.bio}"</p>
+                    </div>
+                </div>`,
+                    )
+                    .join("");
+                lucide.createIcons();
+            }
+
+            function renderGrading() {
+                const table = document.getElementById("grading-table");
+                table.innerHTML = students
+                    .map((s, idx) => {
+                        const weighted = (s.m * 0.4 + s.f * 0.6).toFixed(1);
+                        return `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="p-8 font-bold flex items-center gap-4">
+                        <img src="${s.img}" class="w-10 h-10 rounded-xl border border-white/5">
+                        <div><p class="text-sm">${s.n}</p><span class="text-[9px] text-accent font-black uppercase">${s.s}</span></div>
+                    </td>
+                    <td class="text-center"><input type="number" onchange="updateGrade(${idx},'m',this.value)" value="${s.m}" class="grade-input font-black"></td>
+                    <td class="text-center"><input type="number" onchange="updateGrade(${idx},'f',this.value)" value="${s.f}" class="grade-input font-black"></td>
+                    <td class="text-center font-black text-lg">${weighted}</td>
+                    <td class="text-center"><span class="px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${weighted >= 75 ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}">${weighted >= 75 ? "PASSED" : "RETAKE"}</span></td>
+                    <td class="text-right p-8"><button onclick="showToast('Saved', 'Record updated.')" class="p-2 hover:bg-white/10 rounded-lg"><i data-lucide="check" class="w-4 h-4"></i></button></td>
+                </tr>`;
+                    })
+                    .join("");
+                lucide.createIcons();
+            }
+
+            function updateGrade(i, t, v) {
+                students[i][t] = parseFloat(v);
+                renderGrading();
+            }
+            function finalizeGrades() {
+                showToast("Syncing", "Grades updated in institutional ledger.");
+            }
+
+            function renderVault() {
+                const grid = document.getElementById("vault-grid");
+                grid.innerHTML = [
+                    { n: "Sensor_Spec.pdf", s: "12MB" },
+                    { n: "Strand_Matrix.csv", s: "1MB" },
+                    { n: "FSR_Drivers.zip", s: "44KB" },
+                    { n: "LMS_Core.sys", s: "2MB" },
+                ]
+                    .map(
+                        (f) => `
+                <div class="glass-panel p-8 rounded-[32px] text-center hover:bg-white/5 cursor-pointer transition-all border-transparent hover:border-accent/40 group">
+                    <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-accent group-hover:text-black transition-all"><i data-lucide="file"></i></div>
+                    <p class="text-[10px] font-black uppercase text-white truncate mb-1">${f.n}</p><p class="text-[9px] font-mono text-gray-600">${f.s}</p>
+                </div>`,
+                    )
+                    .join("");
+                lucide.createIcons();
+            }
+
+            function renderQuizzes() {
+                const isT = currentUser.role === "teacher";
+                document.getElementById("quizzes-header").innerText = isT
+                    ? "Assessment Performance"
+                    : "Performance History";
+                const list = document.getElementById("quiz-list");
+                const data = isT
+                    ? [
+                          {
+                              n: "Final Exam: STEM",
+                              s: "88% Avg",
+                              d: "Feb 04",
+                              rank: "Pass: 92%",
+                          },
+                          {
+                              n: "Midterm: ABM",
+                              s: "82% Avg",
+                              d: "Jan 28",
+                              rank: "Pass: 85%",
+                          },
+                      ]
+                    : [
+                          {
+                              n: "Calculus: Integration",
+                              s: "95/100",
+                              d: "Feb 01",
+                              rank: "#1",
+                          },
+                          {
+                              n: "General Bio",
+                              s: "92/100",
+                              d: "Jan 25",
+                              rank: "#4",
+                          },
+                      ];
+
+                list.innerHTML = data
+                    .map(
+                        (h) => `
+                <div class="glass-panel p-8 rounded-[40px] flex justify-between items-center hover:bg-white/5 cursor-pointer transition-all">
+                    <div class="flex items-center gap-6">
+                        <div class="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center text-accent font-black text-sm">${h.rank}</div>
+                        <div><div class="font-black text-xl text-white">${h.n}</div><div class="text-[10px] text-gray-500 uppercase font-mono mt-1">${h.d} • RECORD</div></div>
+                    </div>
+                    <div class="text-right"><div class="text-accent font-black text-3xl">${h.s}</div></div>
+                </div>`,
+                    )
+                    .join("");
+                lucide.createIcons();
+            }
+
+            // --- COMMS ---
+
+            function sendMsg() {
+                const inp = document.getElementById("chat-input");
+                if (!inp.value) return;
+                const msgs = document.getElementById("chat-messages");
+                msgs.innerHTML += `<div class="message-bubble message-sent animate-slide"><p>${inp.value}</p></div>`;
+                const v = inp.value;
+                inp.value = "";
+                msgs.scrollTop = msgs.scrollHeight;
+                setTimeout(() => {
+                    msgs.innerHTML += `<div class="message-bubble message-received animate-slide"><p>Node acknowledgement received for payload: "${v.substring(0, 8)}...".</p></div>`;
+                    msgs.scrollTop = msgs.scrollHeight;
+                }, 800);
+            }
+
+            // --- PROFILE ---
+
+            function initAvatarPicker() {
+                const grid = document.getElementById("avatar-grid");
+                grid.innerHTML = avatarPool
+                    .map(
+                        (url) =>
+                            `<img src="${url}" onclick="selectAvatar('${url}')" class="avatar-picker-item w-16 h-16 ${currentUser.img === url ? "selected" : ""}">`,
+                    )
+                    .join("");
+            }
+            function toggleAvatarPicker() {
+                document
+                    .getElementById("avatar-picker")
+                    .classList.toggle("hidden");
+            }
+            function selectAvatar(url) {
+                currentUser.img = url;
+                updateUIStrings();
+                initAvatarPicker();
+                showToast("Avatar Updated", "Visual identity synchronized.");
+            }
+            function saveProfile() {
+                currentUser.name = document.getElementById("edit-name").value;
+                currentUser.bio = document.getElementById("edit-bio").value;
+                updateUIStrings();
+                showToast("Changes Saved", "Institutional profile updated.");
+            }
+
+            // --- UTILS ---
+            function showToast(t, m) {
+                const el = document.getElementById("toast");
+                document.getElementById("toast-title").innerText = t;
+                document.getElementById("toast-msg").innerText = m;
+                el.classList.add("show");
+                setTimeout(() => el.classList.remove("show"), 3000);
+            }
+            function changeStrand(v) {
+                activeStrand = v;
+                document.body.className = "theme-" + v;
+                showToast(
+                    "Strand Switched",
+                    `Frequency ${v.toUpperCase()} active.`,
+                );
+                initDashboard();
+            }
+            function logout() {
+                showToast("Wiping Session...", "Closing secure connection.");
+                setTimeout(() => window.location.reload(), 1500);
+            }
+
+            // Starfield background
+            const canvas = document.getElementById("starfield");
+            const ctx = canvas.getContext("2d");
+            let stars = [];
+            function initStars() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                stars = [];
+                for (let i = 0; i < 150; i++)
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        s: Math.random() * 1.5,
+                        o: Math.random(),
+                        sp: 0.005 + Math.random() * 0.01,
+                    });
+            }
+            function animateStars() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                stars.forEach((s) => {
+                    ctx.fillStyle = `rgba(255,255,255,${s.o})`;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
+                    ctx.fill();
+                    s.o += s.sp;
+                    if (s.o > 0.8 || s.o < 0.1) s.sp = -s.sp;
+                });
+                requestAnimationFrame(animateStars);
+            }
+            window.addEventListener("resize", initStars);
+            initStars();
+            animateStars();
+        </script>
+    </body>
+</html>
